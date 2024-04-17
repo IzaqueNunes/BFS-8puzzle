@@ -3,29 +3,33 @@
 #include <vector>
 #include <queue>
 #include <chrono>
+#include <unordered_set>
+#include <map>
+#include <stack>
 
+using namespace std;
 class Node
 {
 public:
-  std::vector<Node *> children;
-  std::vector<int> initialVector;
+  vector<Node *> children;
+  vector<int> initialVector;
   Node *parent;
 
-  Node(std::vector<int> _initialVector, Node *_parent)
+  Node(vector<int> _initialVector, Node *_parent)
   {
     initialVector = _initialVector;
     parent = _parent;
   }
 
-  void printPuzzle(std::vector<int> vectorValues)
+  void printPuzzle(vector<int> vectorValues)
   {
     int count = 0;
     for (auto i : vectorValues)
     {
       if (count % 3 == 0)
-        std::cout << "\n";
+        cout << "\n";
 
-      std::cout << i << ' ';
+      cout << i << ' ';
       count++;
     }
   }
@@ -33,18 +37,20 @@ public:
   int findZero()
   {
     // Find index of zero in vector
-    std::vector<int>::iterator it = std::find(this->initialVector.begin(), this->initialVector.end(), 0);
-    return static_cast<int>(std::distance(this->initialVector.begin(), it));
+    // find: Retorna ponteiro para a posição do zero
+    // distance: retorna a posição do vetor que está o blank space
+    vector<int>::iterator it = find(this->initialVector.begin(), this->initialVector.end(), 0);
+    return static_cast<int>(distance(this->initialVector.begin(), it));
   }
 
   void moveUp()
   {
     int zPos = this->findZero();
-    std::vector<int> temp = this->initialVector;
+    vector<int> temp = this->initialVector;
 
     if (zPos >= 3)
     {
-      std::swap(temp[zPos], temp[zPos - 3]);
+      swap(temp[zPos], temp[zPos - 3]);
       Node *child = new Node(temp, this);
       children.push_back(child);
     }
@@ -53,11 +59,11 @@ public:
   void moveDown()
   {
     int zPos = this->findZero();
-    std::vector<int> temp = this->initialVector;
+    vector<int> temp = this->initialVector;
 
     if (zPos < 6)
     {
-      std::swap(temp[zPos], temp[zPos + 3]);
+      swap(temp[zPos], temp[zPos + 3]);
       Node *child = new Node(temp, this);
       children.push_back(child);
     }
@@ -66,11 +72,11 @@ public:
   void moveRight()
   {
     int zPos = this->findZero();
-    std::vector<int> temp = this->initialVector;
+    vector<int> temp = this->initialVector;
 
     if (zPos % 3 < 2)
     {
-      std::swap(temp[zPos], temp[zPos + 1]);
+      swap(temp[zPos], temp[zPos + 1]);
       Node *child = new Node(temp, this);
       children.push_back(child);
     }
@@ -79,35 +85,18 @@ public:
   void moveLeft()
   {
     int zPos = this->findZero();
-    std::vector<int> temp = this->initialVector;
+    vector<int> temp = this->initialVector;
 
     if (zPos % 3 > 0)
     {
-      std::swap(temp[zPos], temp[zPos - 1]);
+      swap(temp[zPos], temp[zPos - 1]);
       Node *child = new Node(temp, this);
       children.push_back(child);
     }
   }
 };
 
-bool isVisited(std::queue<Node *> queue, Node *currentNode)
-{
-  bool exist = false;
-
-  while (!queue.empty())
-  {
-    if (queue.front()->initialVector == currentNode->initialVector)
-    {
-      exist = true;
-    }
-
-    queue.pop();
-  }
-
-  return exist;
-}
-
-int traceSolution(std::vector<Node *> sol, Node *g)
+int traceSolution(vector<Node *> sol, Node *g)
 {
   Node *curr = g;
   sol.push_back(g);
@@ -118,30 +107,30 @@ int traceSolution(std::vector<Node *> sol, Node *g)
     sol.push_back(curr);
   }
 
-  std::reverse(sol.begin(), sol.end());
+  reverse(sol.begin(), sol.end());
 
   int depth = 0;
   for (auto i : sol)
   {
     depth += 1;
     // i->printPuzzle(i->initialVector);
-    // std::cout << "\n";
+    // cout << "\n";
   }
   return depth;
-  // std::cout << "Depth: " << depth - 1 << std::endl;
+  // cout << "Depth: " << depth - 1 << endl;
 }
 
 class Puzzle
 {
 private:
-  std::queue<Node *> queue;
-  std::queue<Node *> visited;
-  std::vector<int> finalVector;
+  queue<Node *> queue;            // para open
+  map<vector<int>, bool> visited; // para closed
+  vector<int> finalVector;
 
 public:
   int depth;
   int nodesCount;
-  Puzzle(std::vector<int> _initialVector, std::vector<int> _finalVector)
+  Puzzle(vector<int> _initialVector, vector<int> _finalVector)
   {
     Node *initialNode = new Node(_initialVector, nullptr);
     this->queue.push(initialNode);
@@ -149,14 +138,14 @@ public:
     this->finalVector = _finalVector;
     this->nodesCount = 0;
 
-    this->visited.push(initialNode);
+    this->visited[initialNode->initialVector] = true;
   }
 
-  void BFS(std::vector<int> initialVector)
+  void BFS(vector<int>)
   {
-    std::vector<Node *> solution;
+    vector<Node *> solution;
 
-    std::cout << "Searching for solution..." << std::endl;
+    cout << "Searching for solution..." << endl;
 
     while (!queue.empty())
     {
@@ -177,18 +166,18 @@ public:
         // If currentChild is equal to finalVector retunr void
         if (currentChild->initialVector == this->finalVector)
         {
-          // std::cout << "Solution found :)" << std::endl;
 
           // Print solution steps
           this->depth = traceSolution(solution, currentChild);
-          // std::cout << "Nodes count: " << this->nodesCount << std::endl;
+          // cout << "Nodes count: " << this->nodesCount << endl;
           return;
         }
 
-        if (!isVisited(this->visited, currentChild))
+        // Verificando se o nodo atual já foi visitado
+        if (visited.count(currentChild->initialVector) == 0)
         {
 
-          this->visited.push(currentChild);
+          this->visited[currentChild->initialVector] = true;
           this->queue.push(currentChild);
         }
       }
@@ -201,10 +190,6 @@ int manhattan_distance_matrix(int puzzle[][3])
   int sum = 0;
   int n = 3;
 
-  // Representa a configuração final do quebra-cabeça.
-  // int goal[3][3] = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}};
-
-  // Itera sobre as posições da matriz.
   for (int i = 0; i < n; i++)
   {
     for (int j = 0; j < n; j++)
@@ -231,40 +216,26 @@ int manhattan_distance_matrix(int puzzle[][3])
 
 int main()
 {
-  std::vector<int> initialVector = {
-      0, 6, 1,
-      7, 4, 2,
-      3, 8, 5};
 
-  std::vector<int> finalVector = {
-      0, 1, 2,
-      3, 4, 5,
-      6, 7, 8};
-
+  vector<int> initialVector = {2, 4, 7, 0, 3, 6, 8, 1, 5};
+  vector<int> finalVector = {0, 1, 2, 3, 4, 5, 6, 7, 8};
   Puzzle puzzle(initialVector, finalVector);
 
-  auto start_time = std::chrono::high_resolution_clock::now();
+  auto start_time = chrono::high_resolution_clock::now();
 
   puzzle.BFS(initialVector);
-  int puzzleDistance[3][3] = {{
-                                  0,
-                                  6,
-                                  1,
-                              },
-                              {
-                                  7,
-                                  4,
-                                  2,
-                              },
-                              {3, 8, 5}};
+  int puzzleDistance[3][3] = {
+
+      {
+          0,
+          3,
+          6,
+      },
+      {8, 1, 5}};
   int distanceManhattan = manhattan_distance_matrix(puzzleDistance);
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration_sec = std::chrono::duration<double>(end_time - start_time).count();
-  std::cout << "Nodos expandidos: " << puzzle.nodesCount << '\n'
-            << "Comprimento da Solucao otima: " << puzzle.depth - 1 << '\n'
-            << "Valor medio da funcao heuristica: 0 \n"
-            << "Heuristica no estado inicial: " << distanceManhattan << "\n";
-  std::cout << "Tempo para solucao: " << duration_sec << " segundos" << std::endl;
+  auto end_time = chrono::high_resolution_clock::now();
+  auto duration_sec = chrono::duration<double>(end_time - start_time).count();
+  cout << puzzle.nodesCount << "," << puzzle.depth - 1 << "," << duration_sec << "," << 0 << "," << distanceManhattan << endl;
 
   return 0;
 }
